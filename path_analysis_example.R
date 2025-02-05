@@ -9,6 +9,7 @@ library(EGRET) # assist with USGS flow data retrieval and 7-day moving average f
 library(dataRetrieval) # to retrieve flow data
 library(tidyverse)
 library(lubridate)
+library(knitr)
 
 library(fasstr) # to calculate flow center of timing (calculates sooo many more metrics)
 
@@ -97,15 +98,35 @@ ggplot(boise.summary %>% gather(-Year,-site_no,key=metric,value=Value), aes(Year
 mod<-'
 min7q ~ b*MAF + c*COT
 COT ~ a*MAF
-res:= a*b
+ind:= a*b
 total:= c + (a*b)
 '
+
+# # https://lavaan.ugent.be/tutorial/mediation.html
+# mod<-'# direct effect
+# min7q ~ c*MAF
+# # mediator
+# COT ~ a*MAF
+# min7q ~ b*COT
+# # indirect effect (a*b)
+# ind:= a*b
+# # total effect
+# total:= c + (a*b)
+# '
+
 ### the path model execution
 mod.res <- sem(mod,data=boise.summary %>% filter(between(Year,1948,2013)))
+# mod.res <- sem(mod,data=boise.summary %>% filter(between(Year,1948,2013)),se='bootstrap',bootstrap = 10000)
 
 ################################################################################################
 ### evaluate model and extract relevant statistics - rho (correlation coefficient), beta (direct effect), and total (net) effect
 summary(mod.res, fit.measures=T,standardized=T,rsq=T,ci=T)
+
+parameterestimates(mod.res) %>% 
+  kable()
+
+# parameterestimates(mod.res, boot.ci.type = "bca.simple", standardized = TRUE) %>% 
+#  kable()
 
 ################################################################################################
 ### Still not sure how to calculate 'net effect'
