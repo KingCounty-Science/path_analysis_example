@@ -94,25 +94,17 @@ ggplot(boise.summary %>% gather(-Year,-site_no,key=metric,value=Value), aes(Year
 ### Perform path analysis using sem function in lavaan package
 ################################################################################################
 
-### set up path model - not really sure what I'm doing with a, b, and c and how it might be helpful...
+### set up path model - based on the YouTube video tutorial this is the way to specify the indirect and total effects...
+### https://www.youtube.com/watch?v=ab3Y-xnXigA R tutorial: Structural equation modelling part 2 (indirect effects)
+### however the results don't seem to square with the example in the paper or they might but it is still unclear what to add to 
+### the direct effect of 0.78 between MAF ~ min7q to get the net effect...should be equal to 0.07
 mod<-'
-min7q ~ b*MAF + c*COT
 COT ~ a*MAF
-ind:= a*b
+min7q ~ b*COT + c*MAF
+# indirect and total effects
+indirect:= a*b
 total:= c + (a*b)
 '
-
-# # https://lavaan.ugent.be/tutorial/mediation.html
-# mod<-'# direct effect
-# min7q ~ c*MAF
-# # mediator
-# COT ~ a*MAF
-# min7q ~ b*COT
-# # indirect effect (a*b)
-# ind:= a*b
-# # total effect
-# total:= c + (a*b)
-# '
 
 ### the path model execution
 mod.res <- sem(mod,data=boise.summary %>% filter(between(Year,1948,2013)))
