@@ -96,12 +96,15 @@ ggplot(boise.summary %>% gather(-Year,-site_no,key=metric,value=Value), aes(Year
 
 ### set up path model - based on the YouTube video tutorial this is the way to specify the indirect and total effects...
 ### https://www.youtube.com/watch?v=ab3Y-xnXigA R tutorial: Structural equation modelling part 2 (indirect effects)
-### however the results don't seem to square with the example in the paper or they might but it is still unclear what to add to 
-### the direct effect of 0.78 between MAF ~ min7q to get the net effect...should be equal to 0.07
+### The 'total' effect can be found in the summary results $pe$std.all[11]
+### 
 mod<-'
 COT ~ a*MAF
 min7q ~ b*COT + c*MAF
 # indirect and total effects
+a1 :=a
+b1 :=b
+c1 :=c
 indirect:= a*b
 total:= c + (a*b)
 '
@@ -121,7 +124,7 @@ parameterestimates(mod.res) %>%
 #  kable()
 
 ################################################################################################
-### Still not sure how to calculate 'net effect'
+### Results for rho, beta, and net effects in Figure 2
 # fitMeasures(mod.res)
 ### get rho and beta - Kormos' correlation coefficient and standardized regression coefficient (direct effect), respectively...I think
 ### the results correspond almost exactly to results in Figure 2
@@ -129,7 +132,13 @@ R <- lavInspect(mod.res, what = 'cor.ov') # rho
 R <- data.frame(Stat = "ρ", COT_min7q = round(R["COT","min7q"],2), MAF_COT = round(R["MAF","COT"],2), MAF_min7q = round(R["MAF","min7q"],2))
 B = lavInspect(mod.res, what = 'std')$beta
 B <- data.frame(Stat = "ß", COT_min7q = round(B["min7q","COT"],2), MAF_COT = round(B["COT","MAF"],2), MAF_min7q = round(B["min7q","MAF"],2))
-NE <- NULL # ? Total (Net) Effect
+# 'total' effect in summary(mod.res)$pe$std.all[11] 
+NE = lavInspect(mod.res, what = 'std')$beta
+NE <- data.frame(Stat = "NE", COT_min7q = round(NE["min7q","COT"],2), MAF_COT = round(NE["COT","MAF"],2), MAF_min7q = round(summary(mod.res, fit.measures=T,standardized=T,rsq=T,ci=T)$pe$std.all[11],2))
+
+# results table for Figure 2
+stats <- bind_rows(R,B,NE)
+stats %>% kable()
 
 ################################################################################################
 ### simple path model plot....illustrates that min7q affected much more strongly by mean annual flow (MAF) vs flow center of timing (COT)
